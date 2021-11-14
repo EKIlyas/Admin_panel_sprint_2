@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  admin:
+    build: cinema/
+    command: gunicorn cinema.wsgi:application --bind 0.0.0.0:8000
+    expose:
+      - 8000
+    depends_on:
+      - db
+    volumes:
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/mediafiles
+    environment:
+      DEBUG: 0
+      SECRET_KEY: KEK
+      ALLOWED_HOSTS: localhost
+      DATABASE: postgres
+      DB_HOST: db
+      DB_NAME: cinema
+      DB_USER: cinema
+      DB_PASSWORD: cinema
+      DB_PORT: 5432
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_PASSWORD=cinema
+      - POSTGRES_USER=cinema
+      - POSTGRES_DB=cinema
+    volumes:
+      - cinema_data:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:1.19.2
+    volumes:
+      - ./nginx_conf/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx_site_conf:/etc/nginx/conf.d
+      - static_volume:/usr/src/app/staticfiles/
+      - media_volume:/usr/src/app/mediafiles/
+    depends_on:
+      - admin
+    ports:
+      - 80:80
+
+volumes:
+  cinema_data:
+  static_volume:
+  media_volume:
