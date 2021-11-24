@@ -15,4 +15,6 @@ python manage.py migrate
 python manage.py collectstatic --no-input --clear
 django-admin compilemessages
 
+gunicorn cinema.wsgi:application --bind 0.0.0.0:8000
+
 exec "$@"

@@ -12,16 +12,24 @@ class MoviesApiMixin:
     http_method_names = ['get']
     queryset = FilmWork.objects.all()
 
-    def get_queryset(self):
-        qs = super().get_queryset().annotate(genres_arr=ArrayAgg('genres__name', distinct=True))
+    @staticmethod
+    def extend_queryset(qs):
+        # не совсем понял комментарий, наверное так
+        qs = qs.annotate(genres_arr=ArrayAgg('genres__name', distinct=True))
         qs = qs.annotate(actors=ArrayAgg('persons__full_name', distinct=True,
                                          filter=Q(personfilmwork__role=Role.ACTOR.value)))
         qs = qs.annotate(writers=ArrayAgg('persons__full_name', distinct=True,
                                           filter=Q(personfilmwork__role=Role.WRITER.value)))
         qs = qs.annotate(directors=ArrayAgg('persons__full_name', distinct=True,
                                             filter=Q(personfilmwork__role=Role.DIRECTOR.value)))
-        qs = qs.values('id', 'title', 'description', 'creation_date', 'rating', 'type', 'genres_arr', 'actors', 'writers',
-                       'directors')
+
+        return qs
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        qs = self.extend_queryset(qs)
+        qs = qs.values('id', 'title', 'description', 'creation_date', 'rating', 'type', 'genres_arr', 'actors',
+                       'writers', 'directors')
         return qs
 
     def render_to_response(self, context, **response_kwargs):
